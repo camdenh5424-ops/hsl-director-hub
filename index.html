@@ -12,9 +12,10 @@
   Supabase isn't configured yet — fill in <code>config.js</code> with your project URL and anon key.
 </div>
 
-<!-- ============ AUTH SCREEN ============ -->
-<div class="auth-screen" id="auth-screen" hidden>
+<!-- ============ AUTH MODAL (sign in) ============ -->
+<div class="auth-overlay" id="auth-screen" hidden>
   <div class="auth-card">
+    <button type="button" class="auth-close" id="auth-close" aria-label="Close">&times;</button>
     <img class="mark" src="assets/hilltop.svg" alt="">
     <h1>HSL Director Hub</h1>
     <p class="sub">Sign in with the account your administrator set up for you.</p>
@@ -32,13 +33,13 @@
     <p class="auth-error" id="auth-error" hidden></p>
     <p class="auth-note">
       <a href="#" id="forgot-link">Forgot your password?</a><br><br>
-      No account? Ask your HSL Central contact to invite you — this dashboard is invite-only.
+      Anyone can view this dashboard. No account? Ask your HSL Central contact to invite you if you need to post updates or make changes.
     </p>
   </div>
 </div>
 
 <!-- ============ APP ============ -->
-<div class="app" id="app-shell" hidden>
+<div class="app" id="app-shell">
   <header class="topnav">
     <div class="topnav-inner">
       <a class="brand" href="#overview">
@@ -54,8 +55,9 @@
         <a class="navlink" data-page="team" href="#team" id="team-navlink" hidden>Team Access</a>
       </nav>
       <div class="topnav-right">
-        <span class="whoami-chip">Signed in as <span class="who" id="whoami">&mdash;</span> <span class="role-badge" id="role-badge">viewer</span></span>
-        <button class="btn btn-ghost btn-sm" id="sign-out" type="button">Sign out</button>
+        <span class="whoami-chip" id="whoami-chip" hidden>Signed in as <span class="who" id="whoami">&mdash;</span> <span class="role-badge" id="role-badge">viewer</span></span>
+        <button class="btn btn-ghost btn-sm" id="sign-out" type="button" hidden>Sign out</button>
+        <button class="btn btn-primary btn-sm" id="sign-in-open" type="button">Sign in</button>
       </div>
     </div>
   </header>
