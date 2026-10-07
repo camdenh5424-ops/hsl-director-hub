@@ -6,3 +6,5 @@
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
+   [build.environment]
+     SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL"
