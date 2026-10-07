@@ -1,0 +1,9 @@
+{
+  "name": "hsl-director-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HSL Director Hub — Netlify + Supabase edition",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}

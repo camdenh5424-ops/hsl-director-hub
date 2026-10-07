@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HSL Director Hub</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="config-warning" hidden style="background:#CF3D2E;color:#fff;font:13px/1.5 sans-serif;padding:10px 16px;text-align:center;">
+  Supabase isn't configured yet — fill in <code>config.js</code> with your project URL and anon key.
+</div>
+
+<!-- ============ AUTH SCREEN ============ -->
+<div class="auth-screen" id="auth-screen" hidden>
+  <div class="auth-card">
+    <img class="mark" src="assets/hilltop.svg" alt="">
+    <h1>HSL Director Hub</h1>
+    <p class="sub">Sign in with the account your administrator set up for you.</p>
+    <form id="login-form">
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" required autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" type="submit" id="login-submit">Sign in</button>
+    </form>
+    <p class="auth-error" id="auth-error" hidden></p>
+    <p class="auth-note">
+      <a href="#" id="forgot-link">Forgot your password?</a><br><br>
+      No account? Ask your HSL Central contact to invite you — this dashboard is invite-only.
+    </p>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app-shell" hidden>
+  <header class="topnav">
+    <div class="topnav-inner">
+      <a class="brand" href="#overview">
+        <span class="mark"><img src="assets/hilltop.svg" alt=""></span>
+        <span class="name">Highlands HSL</span>
+      </a>
+      <nav class="navgroup" id="nav">
+        <a class="navlink" data-page="overview" href="#overview">Overview</a>
+        <a class="navlink" data-page="updates" href="#updates">Updates<span class="count" id="nav-updates-count">0</span></a>
+        <a class="navlink" data-page="links" href="#links">Files &amp; Links<span class="count" id="nav-links-count">0</span></a>
+        <a class="navlink" data-page="tools" href="#tools">Resource Status<span class="count" id="nav-tools-count">0%</span></a>
+        <a class="navlink" data-page="plan" href="#plan">Vision &amp; Playbook</a>
+        <a class="navlink" data-page="team" href="#team" id="team-navlink" hidden>Team Access</a>
+      </nav>
+      <div class="topnav-right">
+        <span class="whoami-chip">Signed in as <span class="who" id="whoami">&mdash;</span> <span class="role-badge" id="role-badge">viewer</span></span>
+        <button class="btn btn-ghost btn-sm" id="sign-out" type="button">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <section class="page" id="page-overview">
+      <div class="hero hero-photo" style="background-image:linear-gradient(0deg, rgba(5,20,30,0.78) 0%, rgba(5,20,30,0.35) 55%, rgba(5,20,30,0.1) 100%), url('assets/hero.jpg');">
+        <div class="hero-photo-inner">
+          <h1>Welcome, Directors.</h1>
+          <p>Everything you need to run HSL this semester &mdash; updates from Central, files and links, and what's ready to use right now.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="#updates">Post an update</a>
+            <a class="btn btn-ghost" href="#plan">Vision &amp; Playbook</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="quickstats">
+        <div class="qs"><span class="qs-v" id="stat-tools">0 / 0</span><span class="qs-k">Resources ready</span></div>
+        <div class="qs"><span class="qs-v" id="stat-updates">0</span><span class="qs-k">Updates logged</span></div>
+        <div class="qs"><span class="qs-v" id="stat-links">0</span><span class="qs-k">Files &amp; links</span></div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Recent updates</div>
+            <a class="panel-link" href="#updates">View all</a>
+          </div>
+          <div class="feed" id="overview-updates">
+            <div class="empty">Loading&hellip;</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">The Rhythm</div></div>
+            <div class="rhythm">
+              <div class="chip hsl"><div class="l">Spring</div><div class="v">HSL</div></div>
+              <div class="chip summer"><div class="l">Summer</div><div class="v">252</div></div>
+              <div class="chip hsl"><div class="l">Fall</div><div class="v">HSL</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">The Journey</div></div>
+            <div class="journey-mini">
+              <div class="jmini plant"><span class="tag">Plant</span><p>Take ownership of the house.</p></div>
+              <div class="jmini grow"><span class="tag">Grow</span><p>Take ownership of your faith.</p></div>
+              <div class="jmini reach"><span class="tag">Reach</span><p>Take ownership in God's mission.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- UPDATES -->
+    <section class="page" id="page-updates" hidden>
+      <div class="page-banner" style="background-image:linear-gradient(0deg, rgba(5,20,30,0.6) 0%, rgba(5,20,30,0.15) 100%), url('assets/banner-updates.jpg');">
+        <div class="page-banner-inner">
+          <h1>Updates</h1>
+          <p>What Central and other directors are posting &mdash; see it here first.</p>
+        </div>
+      </div>
+
+      <div class="composer">
+        <textarea id="update-text" placeholder="What's new at your campus? e.g. &quot;Growth Track turnout was great this week &mdash; 12 students signed up.&quot;" maxlength="2000"></textarea>
+        <div class="composer-foot">
+          <span class="composer-hint" id="update-hint">Posting as &mdash;</span>
+          <button class="btn btn-primary" id="post-update" disabled>Post update</button>
+        </div>
+      </div>
+
+      <div class="feed" id="updates-feed">
+        <div class="empty">Loading updates&hellip;</div>
+      </div>
+    </section>
+
+    <!-- LINKS -->
+    <section class="page" id="page-links" hidden>
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Files &amp; Links</h1>
+          <p class="page-sub">The content catalog, budget sheet, branding files, and everything else you need, in one place.</p>
+        </div>
+      </div>
+
+      <form class="add-link-form" id="add-link-form">
+        <div class="field">
+          <label for="link-title">Title</label>
+          <input id="link-title" type="text" placeholder="e.g. Budget Guidance" maxlength="120" required>
+        </div>
+        <div class="field">
+          <label for="link-url">Link</label>
+          <input id="link-url" type="url" placeholder="https://&hellip;" required>
+        </div>
+        <div class="field">
+          <label for="link-category">Category</label>
+          <select id="link-category">
+            <option>Content Catalog</option>
+            <option>Branding &amp; Graphics</option>
+            <option>Budget</option>
+            <option>Planner &amp; Calendar</option>
+            <option>Director Resources</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit" disabled id="add-link-btn">Add link</button>
+      </form>
+
+      <div class="link-groups" id="link-groups">
+        <div class="empty">Loading links&hellip;</div>
+      </div>
+    </section>
+
+    <!-- RESOURCE STATUS -->
+    <section class="page" id="page-tools" hidden>
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Resource Status</h1>
+          <p class="page-sub">What's ready for you to use right now, and what Central is still finishing up.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Overall progress</div>
+          <span id="tools-progress-label" style="font-size:13px; font-weight:700; font-variant-numeric:tabular-nums;">0%</span>
+        </div>
+        <div class="progress-bar"><span id="tools-progress-bar" style="width:0%"></span></div>
+      </div>
+
+      <div class="tool-groups" id="tool-groups">
+        <div class="empty">Loading checklist&hellip;</div>
+      </div>
+    </section>
+
+    <!-- VISION & PLAYBOOK -->
+    <section class="page" id="page-plan" hidden>
+      <div class="page-banner" style="background-image:linear-gradient(0deg, rgba(5,20,30,0.6) 0%, rgba(5,20,30,0.15) 100%), url('assets/banner-vision.jpg');">
+        <div class="page-banner-inner">
+          <h1>Vision &amp; Playbook</h1>
+          <p>The vision, the model, and what's yours to own at the campus level.</p>
+        </div>
+      </div>
+
+      <div class="page" style="gap:24px; padding-bottom:0;">
+        <div class="panel ref-section">
+          <h3>HSL Vision</h3>
+          <p>High School Leadership exists to provide intentional discipleship that equips students to be <strong>PLANTED</strong> in the local church, <strong>GROW</strong> in their relationship with Jesus, and <strong>REACH</strong> the lost.</p>
+        </div>
+
+        <div class="panel ref-section">
+          <h3>The Model</h3>
+          <div class="model-grid">
+            <div class="model-card">
+              <span class="who">Central owns the why + what</span>
+              <ul>
+                <li>Vision</li><li>Outcomes</li><li>Student Expectations</li>
+                <li>Director Expectations &mdash; green / yellow / red playbook</li>
+                <li>Approved Content Topics</li><li>Brand / Look</li>
+              </ul>
+            </div>
+            <div class="model-card campus">
+              <span class="who">Campuses own the how</span>
+              <ul>
+                <li>Time + Location</li><li>Experience</li><li>Contextualization</li>
+                <li>Activation</li><li>Relational Approach</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel ref-section">
+          <h3>The HSL Journey</h3>
+          <div class="journey">
+            <div class="jcard plant">
+              <div class="name">01 Plant</div>
+              <p style="font-size:12.5px; color:var(--muted); margin:0;">Take ownership of the house.</p>
+              <ul>
+                <li>Worship One + Serve One</li>
+                <li>Serve through the Dream Team</li>
+                <li>Connected through Small Groups</li>
+                <li>Coaching from leadership</li>
+                <li>Given opportunities to lead</li>
+              </ul>
+              <div class="want">Planted, dependable, connected, taking ownership.</div>
+            </div>
+            <div class="jcard grow">
+              <div class="name">02 Grow</div>
+              <p style="font-size:12.5px; color:var(--muted); margin:0;">Take ownership of your faith.</p>
+              <ul>
+                <li>Know what &amp; why they believe</li>
+                <li>Biblical foundations</li>
+                <li>Consistent spiritual disciplines</li>
+                <li>Character and integrity</li>
+                <li>Hear from God, respond in obedience</li>
+              </ul>
+              <div class="want">Faith that isn't dependent on a service, leader, or environment.</div>
+            </div>
+            <div class="jcard reach">
+              <div class="name">03 Reach</div>
+              <p style="font-size:12.5px; color:var(--muted); margin:0;">Take ownership in God's mission.</p>
+              <ul>
+                <li>Genuine relationships with the lost</li>
+                <li>Confidently share their faith</li>
+                <li>Pray intentionally for lost friends</li>
+                <li>Identify their mission field</li>
+                <li>Invite people into HSL &amp; services</li>
+              </ul>
+              <div class="want">Students who help other people know Jesus.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel ref-section">
+          <h3>Outcomes to Track</h3>
+          <p>Engagement: total HSL students (weekly, via check-in through Rock or Monday), and % with 75%+ attendance.</p>
+          <div class="outcomes">
+            <table>
+              <thead><tr><th>Stage</th><th>Metrics</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Plant</strong></td><td>% Growth Track complete &middot; % serving on Dream Team &middot; % connected to Small Groups</td></tr>
+                <tr><td><strong>Grow</strong></td><td>% leading Small Groups &middot; % given leadership opportunities &middot; % in spiritual disciplines <em>(tracking TBD)</em></td></tr>
+                <tr><td><strong>Reach</strong></td><td>% in school outreach &middot; % who shared their faith &middot; # first-time guests brought</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel ref-section">
+          <h3>Green / Yellow / Red Playbook</h3>
+          <div class="playbook">
+            <div class="pb-row green">
+              <div class="pb-head" style="color:var(--green-ink);">&#128994; Green &mdash; Campus Ownership</div>
+              <ul>
+                <li>Fun + relational elements</li><li>Student Task Force</li><li>Campus activations</li>
+                <li>Flow</li><li>D&eacute;cor</li><li>Location + format</li><li>Budget within expectations</li><li>Serving expectations</li>
+              </ul>
+            </div>
+            <div class="pb-row yellow">
+              <div class="pb-head" style="color:var(--blue-900);">&#128993; Yellow &mdash; Alignment Needed</div>
+              <ul>
+                <li>Student Expectations / Honor Code</li><li>HSL Values</li><li>Branding + graphics</li>
+                <li>Content outside approved catalog</li><li>Changes to semester plan / cadence</li>
+              </ul>
+            </div>
+            <div class="pb-row red">
+              <div class="pb-head" style="color:var(--maroon);">&#128308; Red &mdash; Non-Negotiable</div>
+              <ul>
+                <li>Meet consistently</li><li>Student Director ownership</li><li>Open to students meeting expectations</li>
+                <li>Clear communication channel</li><li>Move students toward Plant + Grow + Reach</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel ref-section">
+          <h3>Content</h3>
+          <p>Central creates an approved HSL Content Catalog &mdash; not fully built-out messages: topics, biblical direction, and activation ideas, so directors can contextualize while staying aligned with the HSL vision.</p>
+          <p><strong>Expectation: freedom comes with preparation.</strong> Content should be planned intentionally, not improvised week to week.</p>
+        </div>
+
+        <div class="panel ref-section">
+          <h3>Experience Models</h3>
+          <div class="exp-grid">
+            <div class="exp-card"><h4>Home</h4><p>A relational environment hosted in a home.</p></div>
+            <div class="exp-card"><h4>Flexible Space</h4><p>~15&ndash;30 students at a campus without a designated student space.</p></div>
+            <div class="exp-card"><h4>Student Space</h4><p>A designated student environment for a more intentional setup.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEAM ACCESS (owner only) -->
+    <section class="page" id="page-team" hidden>
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Team Access</h1>
+          <p class="page-sub">Invite directors and control who can edit this hub. Only owners can see this page.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Invite someone</div></div>
+        <form class="invite-form" id="invite-form">
+          <div class="field">
+            <label for="invite-email">Email</label>
+            <input id="invite-email" type="email" required placeholder="director@churchofthehighlands.com">
+          </div>
+          <div class="field">
+            <label for="invite-role">Role</label>
+            <select id="invite-role">
+              <option value="viewer">Viewer &mdash; can only look</option>
+              <option value="editor" selected>Editor &mdash; can post &amp; edit</option>
+              <option value="owner">Owner &mdash; full control</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" type="submit" id="invite-submit">Send invite</button>
+        </form>
+        <p class="auth-error" id="invite-status" hidden></p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Everyone with access</div></div>
+        <div class="team-list" id="team-list">
+          <div class="empty">Loading&hellip;</div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <span class="fmark">HSL &middot; Church of the Highlands</span>
+      <span>High School Leadership &middot; director resource hub</span>
+    </footer>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
