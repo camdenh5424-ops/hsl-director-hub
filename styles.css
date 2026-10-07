@@ -64,8 +64,7 @@ img{ max-width:100%; }
 .brand .mark{ flex:0 0 auto; width:26px; height:24px; display:block; }
 .brand .mark img{ display:block; width:100%; height:100%; }
 .brand .name{ font-size:19px; letter-spacing:-0.01em; color:var(--blue-700); font-weight:800; line-height:1.1; }
-.navgroup{ display:flex; align-items:center; gap:4px; flex:1 1 auto; min-width:0; overflow-x:auto; scrollbar-width:none; }
-.navgroup::-webkit-scrollbar{ display:none; }
+   .navgroup{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 2px; flex:1 1 auto; min-width:0; }
 .navlink{ display:flex; align-items:center; gap:7px; font-size:14.5px; text-decoration:none; color:var(--blue-900);
   padding:8px 14px; border-radius:var(--radius-pill); transition:background .15s ease,color .15s ease;
   cursor:pointer; white-space:nowrap; font-weight:600; background:none; border:none; }
