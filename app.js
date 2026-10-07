@@ -79,10 +79,16 @@
   }
   window.addEventListener("hashchange", routeFromHash);
 
-  // ---------- auth screen ----------
-  function showAuth(show) {
-    $("auth-screen").hidden = !show;
-    $("app-shell").hidden = show;
+  // ---------- auth modal (sign in is optional — viewing never requires it) ----------
+  function openAuthModal() { $("auth-screen").hidden = false; }
+  function closeAuthModal() { $("auth-screen").hidden = true; }
+
+  function wireAuthToggle() {
+    $("sign-in-open").addEventListener("click", openAuthModal);
+    $("auth-close").addEventListener("click", closeAuthModal);
+    $("auth-screen").addEventListener("click", function (ev) {
+      if (ev.target === $("auth-screen")) closeAuthModal();
+    });
   }
 
   function wireAuthForm() {
@@ -102,6 +108,7 @@
         err.hidden = false;
         return;
       }
+      form.reset();
       await onSignedIn(res.data.session);
     });
 
@@ -125,6 +132,22 @@
       await sb.auth.signOut();
       location.reload();
     });
+  }
+
+  // Shows the right chrome (sign-in button vs. signed-in chip) for the
+  // current session, and re-renders anything whose write controls depend on it.
+  function updateAuthChrome() {
+    var signedIn = !!state.session;
+    $("sign-in-open").hidden = signedIn;
+    $("whoami-chip").hidden = !signedIn;
+    $("sign-out").hidden = !signedIn;
+    if (!signedIn) {
+      $("team-navlink").hidden = true;
+    }
+    refreshComposer();
+    refreshLinkForm();
+    renderUpdates();
+    renderLinks();
   }
 
   // ---------- profile / role ----------
@@ -196,21 +219,29 @@
     });
   }
 
+  function refreshComposer() {
+    var btn = $("post-update");
+    var ta = $("update-text");
+    btn.disabled = !canWrite() || !ta.value.trim();
+    ta.placeholder = canWrite()
+      ? "Share an update with the team..."
+      : (state.session ? "Only editors can post updates. Ask an owner for access." : "Sign in to post an update.");
+  }
+
   function wireComposer() {
     var btn = $("post-update");
     var ta = $("update-text");
-    function refresh() { btn.disabled = !canWrite() || !ta.value.trim(); }
-    ta.addEventListener("input", refresh);
-    refresh();
-    if (!canWrite()) ta.placeholder = "Only editors can post updates. Ask an owner for access.";
+    ta.addEventListener("input", refreshComposer);
+    refreshComposer();
 
     btn.addEventListener("click", async function () {
+      if (!canWrite()) return;
       var text = ta.value.trim();
       if (!text) return;
       btn.disabled = true;
       var res = await sb.from("updates").insert({ text: text, author_id: state.session.user.id });
       if (!res.error) ta.value = "";
-      refresh();
+      refreshComposer();
     });
   }
 
@@ -258,15 +289,16 @@
     });
   }
 
+  function refreshLinkForm() {
+    var ok = canWrite() && $("link-title").value.trim() && $("link-url").value.trim();
+    $("add-link-btn").disabled = !ok;
+  }
+
   function wireLinkForm() {
     var form = $("add-link-form");
     var btn = $("add-link-btn");
-    function refresh() {
-      var ok = canWrite() && $("link-title").value.trim() && $("link-url").value.trim();
-      btn.disabled = !ok;
-    }
-    ["link-title", "link-url"].forEach(function (id) { $(id).addEventListener("input", refresh); });
-    refresh();
+    ["link-title", "link-url"].forEach(function (id) { $(id).addEventListener("input", refreshLinkForm); });
+    refreshLinkForm();
 
     form.addEventListener("submit", async function (ev) {
       ev.preventDefault();
@@ -280,7 +312,7 @@
         title: title, url: url, category: category, author_id: state.session.user.id
       });
       if (!res.error) form.reset();
-      refresh();
+      refreshLinkForm();
     });
   }
 
@@ -448,35 +480,44 @@
   }
 
   // ---------- boot ----------
+  // Signing in only changes what you can DO (post, add links, check off the
+  // list, see Team Access) — the dashboard itself is loaded for everyone,
+  // signed in or not, in boot() below.
   async function onSignedIn(session) {
     state.session = session;
     await loadMyProfile();
     await loadAllProfiles();
     renderWhoAmI();
-    showAuth(false);
-    wireComposer();
-    wireLinkForm();
+    closeAuthModal();
     if (isOwner()) wireInviteForm();
-    await loadAll();
     renderTeam();
-    subscribeRealtime();
-    routeFromHash();
+    updateAuthChrome();
   }
 
   async function boot() {
+    wireAuthToggle();
     wireAuthForm();
     wireSignOut();
+    wireComposer();
+    wireLinkForm();
+
+    // Load and show the dashboard for every visitor, guest or not.
+    await loadAllProfiles();
+    await loadAll();
+    subscribeRealtime();
 
     var { data } = await sb.auth.getSession();
     if (data && data.session) {
       await onSignedIn(data.session);
     } else {
-      showAuth(true);
+      updateAuthChrome();
     }
+    routeFromHash();
 
     sb.auth.onAuthStateChange(function (event, session) {
       if (event === "SIGNED_OUT") {
-        showAuth(true);
+        if (state.channel) sb.removeChannel(state.channel);
+        location.reload();
       }
     });
   }
