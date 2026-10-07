@@ -272,4 +272,24 @@ h1.page-title{ font-size:clamp(26px,4vw,38px); font-weight:800; letter-spacing:-
 /* ---------- Auth gate ---------- */
 .auth-overlay{ position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(5,20,30,0.55); backdrop-filter:blur(2px); }
 .auth-card{ position:relative; width:100%; max-width:380px; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:32px 28px; box-shadow:0 20px 60px rgba(5,20,30,0.35); }
-.auth-close{ position:absolute; top:12px; right:14px; width:28px; height:28px; border:none; background:transparent; font-size:20px;
+.auth-close{ position:absolute; top:12px; right:14px; width:28px; height:28px; border:none; background:transparent; font-size:20px; line-height:1; color:var(--muted); cursor:pointer; border-radius:8px; }
+.auth-close:hover{ background:var(--paper); color:var(--blue-900); }
+.auth-card .mark{ width:40px; height:40px; margin:0 auto 16px; display:block; }
+.auth-card h1{ font-size:22px; font-weight:800; color:var(--blue-900); text-align:center; margin:0 0 6px; }
+.auth-card p.sub{ font-size:13px; color:var(--muted); text-align:center; margin:0 0 24px; }
+.auth-card .field{ margin-bottom:14px; }
+.auth-card input{ width:100%; border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14px; font-family:inherit; }
+.auth-card input:focus{ outline:2px solid var(--blue-400); outline-offset:1px; }
+.auth-card .btn{ width:100%; justify-content:center; margin-top:6px; }
+.auth-error{ font-size:12.5px; color:var(--red); margin:10px 0 0; text-align:center; }
+.auth-note{ font-size:12px; color:var(--faint); text-align:center; margin-top:18px; }
+
+@media (max-width:860px){
+  .topnav-inner{ flex-wrap:wrap; gap:10px 16px; padding-block:12px; }
+  .brand{ flex:1 1 auto; }
+  .navgroup{ flex:1 1 100%; order:3; }
+  .topnav-right{ flex:0 0 auto; }
+  .whoami-chip{ display:none; }
+  .hero{ margin-left:-20px; margin-right:-20px; }
+  .site-footer{ margin-left:-20px; margin-right:-20px; flex-direction:column; align-items:flex-start; }
+}
