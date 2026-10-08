@@ -38,13 +38,34 @@
   </div>
 </div>
 
+<!-- ============ SET PASSWORD (forced after an invite/reset link) ============ -->
+<div class="auth-overlay" id="setpw-screen" hidden>
+  <div class="auth-card">
+    <img class="mark" src="assets/hilltop.svg" alt="">
+    <h1>Set your password</h1>
+    <p class="sub">You're in! Choose a password so you can sign back in next time.</p>
+    <form id="setpw-form">
+      <div class="field">
+        <label for="setpw-password">New password</label>
+        <input id="setpw-password" type="password" required minlength="6" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="setpw-confirm">Confirm password</label>
+        <input id="setpw-confirm" type="password" required minlength="6" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary" type="submit" id="setpw-submit">Save password</button>
+    </form>
+    <p class="auth-error" id="setpw-error" hidden></p>
+  </div>
+</div>
+
 <!-- ============ APP ============ -->
 <div class="app" id="app-shell">
   <header class="topnav">
     <div class="topnav-inner">
       <a class="brand" href="#overview">
         <span class="mark"><img src="assets/hilltop.svg" alt=""></span>
-        <span class="name">Motion Students HSL</span>
+        <span class="name">Highlands HSL</span>
       </a>
       <nav class="navgroup" id="nav">
         <a class="navlink" data-page="overview" href="#overview">Overview</a>
