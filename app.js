@@ -1,6 +1,13 @@
 (function () {
   "use strict";
 
+  // Capture this *before* the Supabase client parses and clears the URL hash.
+  // Invite and password-reset emails land here with "#...type=invite..." or
+  // "#...type=recovery..." — that's our signal to force a "set your password"
+  // step instead of just dropping the person straight into the dashboard.
+  var initialHash = window.location.hash || "";
+  var needsPasswordSetup = /type=invite|type=recovery/i.test(initialHash);
+
   // ---------- Supabase client ----------
   var cfg = window.HSL_CONFIG || {};
   if (!cfg.SUPABASE_URL || cfg.SUPABASE_URL.indexOf("YOUR-PROJECT-REF") !== -1) {
@@ -131,6 +138,38 @@
       if (state.channel) sb.removeChannel(state.channel);
       await sb.auth.signOut();
       location.reload();
+    });
+  }
+
+  function wireSetPasswordForm() {
+    var form = $("setpw-form");
+    var err = $("setpw-error");
+    form.addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      err.hidden = true;
+      var pw = $("setpw-password").value;
+      var confirm = $("setpw-confirm").value;
+      if (pw.length < 6) {
+        err.textContent = "Password must be at least 6 characters.";
+        err.hidden = false;
+        return;
+      }
+      if (pw !== confirm) {
+        err.textContent = "Those two passwords don't match.";
+        err.hidden = false;
+        return;
+      }
+      var btn = $("setpw-submit");
+      btn.disabled = true;
+      var res = await sb.auth.updateUser({ password: pw });
+      btn.disabled = false;
+      if (res.error) {
+        err.textContent = res.error.message;
+        err.hidden = false;
+        return;
+      }
+      needsPasswordSetup = false;
+      $("setpw-screen").hidden = true;
     });
   }
 
@@ -489,6 +528,9 @@
     await loadAllProfiles();
     renderWhoAmI();
     closeAuthModal();
+    if (needsPasswordSetup) {
+      $("setpw-screen").hidden = false;
+    }
     if (isOwner()) wireInviteForm();
     renderTeam();
     updateAuthChrome();
@@ -498,6 +540,7 @@
     wireAuthToggle();
     wireAuthForm();
     wireSignOut();
+    wireSetPasswordForm();
     wireComposer();
     wireLinkForm();
 
