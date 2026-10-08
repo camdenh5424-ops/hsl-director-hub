@@ -23,17 +23,28 @@
   var state = {
     session: null,
     profile: null,          // my own profile row {id, email, display_name, role}
-    profiles: {},           // id -> profile, for everyone (used to show names + Team page)
+    profiles: {},           // id -> profile, for everyone (used to show names + Admin page)
     updates: [],
     links: [],
     tools: {},              // id -> {label, group_name, done}
+    catalogTopics: [],
+    calendarEvents: [],
+    monthFocus: {},          // 'YYYY-MM' -> {month, focus, updated_at}
+    teamRoles: [],
     channel: null
   };
+
+  // The month currently shown on the Calendar & Initiatives page (independent
+  // of what "this month" means on the Overview page, which always shows today).
+  var calState = (function () {
+    var n = new Date();
+    return { year: n.getFullYear(), month: n.getMonth() };
+  })();
 
   // ---------- small helpers ----------
   function $(id) { return document.getElementById(id); }
   function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
@@ -66,12 +77,13 @@
   function isOwner() {
     return !!(state.profile && state.profile.role === "owner");
   }
+  function monthKey(y, m0) { return y + "-" + String(m0 + 1).padStart(2, "0"); }
 
   // ---------- routing ----------
-  var PAGES = ["overview", "updates", "links", "tools", "plan", "team"];
+  var PAGES = ["overview", "catalog", "experience", "calendar", "team", "admin"];
   function showPage(name) {
     if (PAGES.indexOf(name) === -1) name = "overview";
-    if (name === "team" && !isOwner()) name = "overview";
+    if (name === "admin" && !isOwner()) name = "overview";
     PAGES.forEach(function (p) {
       var el = $("page-" + p);
       if (el) el.hidden = p !== name;
@@ -181,12 +193,16 @@
     $("whoami-chip").hidden = !signedIn;
     $("sign-out").hidden = !signedIn;
     if (!signedIn) {
-      $("team-navlink").hidden = true;
+      $("admin-navlink").hidden = true;
     }
     refreshComposer();
     refreshLinkForm();
     renderUpdates();
     renderLinks();
+    renderCatalog();
+    renderCalendarPage();
+    renderOrgChart();
+    renderRoleOverviewGrid();
   }
 
   // ---------- profile / role ----------
@@ -215,19 +231,54 @@
     $("whoami").textContent = name;
     $("role-badge").textContent = state.profile.role;
     $("update-hint").textContent = "Posting as " + name;
-    $("team-navlink").hidden = !isOwner();
+    $("admin-navlink").hidden = !isOwner();
+  }
+
+  // ---------- overview page ----------
+  function renderOverview() {
+    var now = new Date();
+    var key = monthKey(now.getFullYear(), now.getMonth());
+    var monthName = now.toLocaleDateString(undefined, { month: "long" });
+    $("overview-month-label").textContent = monthName + "'s Initiatives";
+
+    var monthEvents = state.calendarEvents
+      .filter(function (e) { return e.event_date && e.event_date.slice(0, 7) === key; })
+      .sort(function (a, b) { return a.event_date < b.event_date ? -1 : 1; });
+
+    var list = $("overview-init-list");
+    if (!monthEvents.length) {
+      list.innerHTML = '<div class="empty">No initiatives logged yet this month.</div>';
+    } else {
+      list.innerHTML = monthEvents.map(function (e) {
+        var d = new Date(e.event_date + "T00:00:00");
+        return '<div class="init-row"><div class="date">' + d.getDate() + '<small>' + d.toLocaleDateString(undefined, { month: "short" }).toUpperCase() + '</small></div>'
+          + '<div><div class="what">' + escapeHtml(e.title) + '</div>'
+          + (e.subtitle ? '<div class="sub">' + escapeHtml(e.subtitle) + '</div>' : '')
+          + '</div></div>';
+      }).join("");
+    }
+
+    var focusRow = state.monthFocus[key];
+    var focusText = focusRow && focusRow.focus;
+    $("overview-month-focus").innerHTML = focusText
+      ? '<strong>Overall focus:</strong> ' + escapeHtml(focusText) + ' &mdash; <a href="#calendar" style="color:var(--blue-700);">see full calendar &rarr;</a>'
+      : '<a href="#calendar" style="color:var(--blue-700);">Set this month\u2019s focus &rarr;</a>';
+
+    $("stat-initiatives").textContent = monthEvents.length;
+    $("stat-catalog").textContent = state.catalogTopics.length;
+    $("stat-roles").textContent = state.teamRoles.length;
+    var weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    var weekCount = state.updates.filter(function (u) { return new Date(u.created_at).getTime() >= weekAgo; }).length;
+    $("stat-updates-week").textContent = weekCount;
   }
 
   // ---------- updates ----------
   function renderUpdates() {
     var feed = $("updates-feed");
-    var overviewFeed = $("overview-updates");
-    $("stat-updates").textContent = state.updates.length;
-    $("nav-updates-count").textContent = state.updates.length;
+    $("nav-updates-count") && ($("nav-updates-count").textContent = state.updates.length);
 
     if (!state.updates.length) {
       feed.innerHTML = '<div class="empty">No updates yet — post the first one.</div>';
-      overviewFeed.innerHTML = '<div class="empty">No updates yet — post the first one.</div>';
       return;
     }
     var sorted = state.updates.slice().sort(function (a, b) {
@@ -249,7 +300,6 @@
     }
 
     feed.innerHTML = sorted.map(row).join("");
-    overviewFeed.innerHTML = sorted.slice(0, 3).map(row).join("");
 
     Array.prototype.slice.call(document.querySelectorAll("[data-del-update]")).forEach(function (btn) {
       btn.addEventListener("click", async function () {
@@ -290,8 +340,6 @@
     try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return url; }
   }
   function renderLinks() {
-    $("stat-links").textContent = state.links.length;
-    $("nav-links-count").textContent = state.links.length;
     var wrap = $("link-groups");
     if (!state.links.length) {
       wrap.innerHTML = '<div class="empty">No links yet — add the first file or resource.</div>';
@@ -359,9 +407,7 @@
   function renderTools() {
     var total = TOOL_SEED_ORDER.length;
     var done = TOOL_SEED_ORDER.filter(function (id) { return state.tools[id] && state.tools[id].done; }).length;
-    $("stat-tools").textContent = done + " / " + total;
     var pct = total ? Math.round((done / total) * 100) : 0;
-    $("nav-tools-count").textContent = pct + "%";
     $("tools-progress-label").textContent = pct + "%";
     $("tools-progress-bar").style.width = pct + "%";
 
@@ -394,8 +440,335 @@
     });
   }
 
-  // ---------- team access (owner only) ----------
-  function renderTeam() {
+  // ---------- content catalog ----------
+  function findTopic(id) {
+    var found = state.catalogTopics.filter(function (t) { return t.id === id; });
+    return found[0];
+  }
+
+  function renderCatalog() {
+    $("add-topic-btn").hidden = !canWrite();
+    var grid = $("catalog-grid");
+    var topics = state.catalogTopics;
+    var html = topics.map(function (t) {
+      return '<div class="catalog-card">'
+        + '<h4>' + escapeHtml(t.title) + (canWrite() ? ' <button class="edit-btn" data-edit-topic="' + t.id + '">Edit</button>' : '') + '</h4>'
+        + (t.biblical_direction ? '<div class="lbl">Biblical direction</div><p>' + escapeHtml(t.biblical_direction) + '</p>' : '')
+        + (t.activation_ideas ? '<div class="lbl">Activation ideas</div><p>' + escapeHtml(t.activation_ideas) + '</p>' : '')
+        + '</div>';
+    }).join("");
+    if (canWrite()) html += '<div class="catalog-card add-card" id="catalog-add-card">+ Add new topic</div>';
+    grid.innerHTML = html || '<div class="empty">No topics yet.</div>';
+
+    Array.prototype.slice.call(grid.querySelectorAll("[data-edit-topic]")).forEach(function (btn) {
+      btn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        openTopicModal("edit", findTopic(btn.getAttribute("data-edit-topic")));
+      });
+    });
+    var addCard = $("catalog-add-card");
+    if (addCard) addCard.addEventListener("click", function () { openTopicModal("add"); });
+  }
+
+  function openTopicModal(mode, topic) {
+    $("topic-error").hidden = true;
+    $("topic-modal-title").textContent = mode === "edit" ? "Edit topic" : "Add a catalog topic";
+    $("topic-id").value = topic ? topic.id : "";
+    $("topic-title").value = topic ? topic.title : "";
+    $("topic-biblical").value = topic ? topic.biblical_direction : "";
+    $("topic-activation").value = topic ? topic.activation_ideas : "";
+    $("topic-delete").hidden = mode !== "edit";
+    $("topic-modal").hidden = false;
+  }
+  function closeTopicModal() { $("topic-modal").hidden = true; }
+
+  function wireTopicModal() {
+    $("topic-modal-close").addEventListener("click", closeTopicModal);
+    $("topic-modal").addEventListener("click", function (ev) {
+      if (ev.target === $("topic-modal")) closeTopicModal();
+    });
+    $("add-topic-btn").addEventListener("click", function () { openTopicModal("add"); });
+
+    $("topic-form").addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      if (!canWrite()) return;
+      var id = $("topic-id").value;
+      var payload = {
+        title: $("topic-title").value.trim(),
+        biblical_direction: $("topic-biblical").value.trim(),
+        activation_ideas: $("topic-activation").value.trim()
+      };
+      if (!payload.title) return;
+      var res;
+      if (id) {
+        res = await sb.from("catalog_topics").update(payload).eq("id", id);
+      } else {
+        payload.author_id = state.session.user.id;
+        res = await sb.from("catalog_topics").insert(payload);
+      }
+      if (res.error) {
+        $("topic-error").textContent = res.error.message;
+        $("topic-error").hidden = false;
+        return;
+      }
+      closeTopicModal();
+    });
+
+    $("topic-delete").addEventListener("click", async function () {
+      var id = $("topic-id").value;
+      if (!id) return;
+      await sb.from("catalog_topics").delete().eq("id", id);
+      closeTopicModal();
+    });
+  }
+
+  // ---------- calendar & initiatives ----------
+  function renderCalendarPage() {
+    var y = calState.year, m = calState.month;
+    var key = monthKey(y, m);
+    var first = new Date(y, m, 1);
+    $("cal-month-label").textContent = first.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+    var focusRow = state.monthFocus[key];
+    $("cal-focus-text").textContent = (focusRow && focusRow.focus) || "No focus set for this month yet";
+    $("cal-focus-input").value = (focusRow && focusRow.focus) || "";
+    $("cal-focus-edit-wrap").hidden = !canWrite();
+
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var startDow = first.getDay();
+    var monthEvents = state.calendarEvents.filter(function (e) { return e.event_date && e.event_date.slice(0, 7) === key; });
+    var byDay = {};
+    monthEvents.forEach(function (e) {
+      var d = parseInt(e.event_date.slice(8, 10), 10);
+      (byDay[d] = byDay[d] || []).push(e);
+    });
+
+    var html = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(function (d) { return '<div class="dow">' + d + '</div>'; }).join("");
+    for (var i = 0; i < startDow; i++) html += '<div class="cell blank"></div>';
+    for (var d = 1; d <= daysInMonth; d++) {
+      var evs = byDay[d] || [];
+      html += '<div class="cell"><div class="num">' + d + '</div>'
+        + evs.map(function (e) { return '<div class="ev">' + escapeHtml(e.title) + '</div>'; }).join("")
+        + '</div>';
+    }
+    $("big-cal").innerHTML = html;
+
+    var sorted = monthEvents.slice().sort(function (a, b) { return a.event_date < b.event_date ? -1 : 1; });
+    var listEl = $("event-list");
+    if (!sorted.length) {
+      listEl.innerHTML = '<div class="empty">No events yet this month.</div>';
+    } else {
+      listEl.innerHTML = sorted.map(function (e) {
+        var dd = new Date(e.event_date + "T00:00:00");
+        return '<div class="init-row"><div class="date">' + dd.getDate() + '<small>' + dd.toLocaleDateString(undefined, { month: "short" }).toUpperCase() + '</small></div>'
+          + '<div style="flex:1 1 auto; min-width:0;"><div class="what">' + escapeHtml(e.title) + '</div>'
+          + (e.subtitle ? '<div class="sub">' + escapeHtml(e.subtitle) + '</div>' : '') + '</div>'
+          + (canWrite() ? '<button class="del" data-del-event="' + escapeHtml(e.id) + '" title="Remove">&times;</button>' : '')
+          + '</div>';
+      }).join("");
+      Array.prototype.slice.call(listEl.querySelectorAll("[data-del-event]")).forEach(function (btn) {
+        btn.addEventListener("click", async function () {
+          await sb.from("calendar_events").delete().eq("id", btn.getAttribute("data-del-event"));
+        });
+      });
+    }
+
+    $("add-event-form").hidden = !canWrite();
+    $("event-form-hint").hidden = canWrite();
+  }
+
+  function wireCalendarNav() {
+    $("cal-prev").addEventListener("click", function () {
+      calState.month--;
+      if (calState.month < 0) { calState.month = 11; calState.year--; }
+      renderCalendarPage();
+    });
+    $("cal-next").addEventListener("click", function () {
+      calState.month++;
+      if (calState.month > 11) { calState.month = 0; calState.year++; }
+      renderCalendarPage();
+    });
+    $("cal-today").addEventListener("click", function () {
+      var n = new Date();
+      calState.year = n.getFullYear();
+      calState.month = n.getMonth();
+      renderCalendarPage();
+    });
+    $("cal-focus-save").addEventListener("click", async function () {
+      if (!canWrite()) return;
+      var key = monthKey(calState.year, calState.month);
+      var text = $("cal-focus-input").value.trim();
+      await sb.from("month_focus").upsert({ month: key, focus: text, updated_at: new Date().toISOString() });
+    });
+  }
+
+  function wireAddEventForm() {
+    $("add-event-form").addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      if (!canWrite()) return;
+      var date = $("event-date").value;
+      var title = $("event-title").value.trim();
+      var subtitle = $("event-subtitle").value.trim();
+      if (!date || !title) return;
+      var res = await sb.from("calendar_events").insert({
+        event_date: date, title: title, subtitle: subtitle, author_id: state.session.user.id
+      });
+      if (!res.error) $("add-event-form").reset();
+    });
+  }
+
+  // ---------- team: org chart + role overviews ----------
+  function findRole(id) {
+    var found = state.teamRoles.filter(function (r) { return r.id === id; });
+    return found[0];
+  }
+
+  function cardHtml(r, isTop) {
+    return '<div class="org-card' + (isTop ? " top" : "") + '">'
+      + (canWrite() ? '<button class="edit-btn" data-edit-role="' + r.id + '">Edit</button>' : '')
+      + '<div class="org-avatar">' + escapeHtml(initials(r.title)) + '</div>'
+      + '<div class="role">' + escapeHtml(r.title) + '</div>'
+      + '<div class="lead">' + (r.subtitle ? escapeHtml(r.subtitle) : '&nbsp;') + '</div>'
+      + '<div class="focus">' + escapeHtml(r.focus) + '</div>'
+      + '</div>';
+  }
+
+  function renderOrgChart() {
+    var wrap = $("org-chart");
+    var roles = state.teamRoles;
+    if (!roles.length) {
+      wrap.innerHTML = canWrite()
+        ? '<div class="org-card add-card" id="org-add-top">+ Add role</div>'
+        : '<div class="empty">No roles yet.</div>';
+      var addTop = $("org-add-top");
+      if (addTop) addTop.addEventListener("click", function () { openRoleModal("add"); });
+      return;
+    }
+    var byParent = {};
+    roles.forEach(function (r) {
+      var k = r.parent_id || "_top";
+      (byParent[k] = byParent[k] || []).push(r);
+    });
+    Object.keys(byParent).forEach(function (k) {
+      byParent[k].sort(function (a, b) { return a.sort_order - b.sort_order; });
+    });
+    var tops = byParent._top || [];
+    var html = "";
+    tops.forEach(function (top) {
+      html += cardHtml(top, true);
+      var kids = byParent[top.id] || [];
+      html += '<div class="org-connector"></div><div class="org-row">';
+      kids.forEach(function (k) { html += cardHtml(k, false); });
+      if (canWrite()) html += '<div class="org-card add-card" data-add-child="' + top.id + '">+ Add role</div>';
+      html += '</div>';
+    });
+    wrap.innerHTML = html;
+
+    Array.prototype.slice.call(wrap.querySelectorAll("[data-edit-role]")).forEach(function (btn) {
+      btn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        openRoleModal("edit", findRole(btn.getAttribute("data-edit-role")));
+      });
+    });
+    Array.prototype.slice.call(wrap.querySelectorAll("[data-add-child]")).forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        openRoleModal("add", null, btn.getAttribute("data-add-child"));
+      });
+    });
+  }
+
+  function renderRoleOverviewGrid() {
+    var grid = $("role-overview-grid");
+    var roles = state.teamRoles.slice().sort(function (a, b) { return a.sort_order - b.sort_order; });
+    if (!roles.length) {
+      grid.innerHTML = '<div class="empty">No roles yet.</div>';
+      return;
+    }
+    grid.innerHTML = roles.map(function (r) {
+      var bullets = (r.responsibilities || "").split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+      return '<div class="role-card">'
+        + '<h4>' + escapeHtml(r.title) + (canWrite() ? ' <button class="edit-btn" data-edit-role2="' + r.id + '">Edit</button>' : '') + '</h4>'
+        + '<div class="who">' + escapeHtml(r.subtitle || r.focus || "") + '</div>'
+        + (bullets.length ? '<ul>' + bullets.map(function (b) { return '<li>' + escapeHtml(b) + '</li>'; }).join("") + '</ul>' : '')
+        + (r.campus_example ? '<div class="campus-ex">At your campus: ' + escapeHtml(r.campus_example) + '</div>' : '')
+        + '</div>';
+    }).join("");
+
+    Array.prototype.slice.call(grid.querySelectorAll("[data-edit-role2]")).forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        openRoleModal("edit", findRole(btn.getAttribute("data-edit-role2")));
+      });
+    });
+  }
+
+  function populateRoleParentSelect(excludeId) {
+    var sel = $("role-parent");
+    var tops = state.teamRoles.filter(function (r) { return !r.parent_id && r.id !== excludeId; });
+    sel.innerHTML = '<option value="">Top of chart (no one)</option>' + tops.map(function (r) {
+      return '<option value="' + r.id + '">' + escapeHtml(r.title) + '</option>';
+    }).join("");
+  }
+
+  function openRoleModal(mode, role, presetParentId) {
+    $("role-error").hidden = true;
+    $("role-modal-title").textContent = mode === "edit" ? "Edit role" : "Add a role";
+    populateRoleParentSelect(role ? role.id : null);
+    $("role-id").value = role ? role.id : "";
+    $("role-title").value = role ? role.title : "";
+    $("role-subtitle").value = role ? role.subtitle : "";
+    $("role-focus").value = role ? role.focus : "";
+    $("role-responsibilities").value = role ? role.responsibilities : "";
+    $("role-campus-example").value = role ? role.campus_example : "";
+    $("role-parent").value = role ? (role.parent_id || "") : (presetParentId || "");
+    $("role-delete").hidden = mode !== "edit";
+    $("role-modal").hidden = false;
+  }
+  function closeRoleModal() { $("role-modal").hidden = true; }
+
+  function wireRoleModal() {
+    $("role-modal-close").addEventListener("click", closeRoleModal);
+    $("role-modal").addEventListener("click", function (ev) {
+      if (ev.target === $("role-modal")) closeRoleModal();
+    });
+    $("add-role-btn").addEventListener("click", function () { openRoleModal("add"); });
+
+    $("role-form").addEventListener("submit", async function (ev) {
+      ev.preventDefault();
+      if (!canWrite()) return;
+      var id = $("role-id").value;
+      var payload = {
+        title: $("role-title").value.trim(),
+        subtitle: $("role-subtitle").value.trim(),
+        focus: $("role-focus").value.trim(),
+        responsibilities: $("role-responsibilities").value.trim(),
+        campus_example: $("role-campus-example").value.trim(),
+        parent_id: $("role-parent").value || null
+      };
+      if (!payload.title) return;
+      var res;
+      if (id) {
+        res = await sb.from("team_roles").update(payload).eq("id", id);
+      } else {
+        res = await sb.from("team_roles").insert(payload);
+      }
+      if (res.error) {
+        $("role-error").textContent = res.error.message;
+        $("role-error").hidden = false;
+        return;
+      }
+      closeRoleModal();
+    });
+
+    $("role-delete").addEventListener("click", async function () {
+      var id = $("role-id").value;
+      if (!id) return;
+      await sb.from("team_roles").delete().eq("id", id);
+      closeRoleModal();
+    });
+  }
+
+  // ---------- admin (owner only): invite + role management ----------
+  function renderAdminTeamList() {
     var wrap = $("team-list");
     var rows = Object.keys(state.profiles).map(function (id) { return state.profiles[id]; });
     rows.sort(function (a, b) { return new Date(a.created_at) - new Date(b.created_at); });
@@ -432,7 +805,7 @@
             })
           });
           await loadAllProfiles();
-          renderTeam();
+          renderAdminTeamList();
         } finally {
           sel.disabled = false;
         }
@@ -466,7 +839,7 @@
           status.style.color = "var(--green-accent)";
           form.reset();
           await loadAllProfiles();
-          renderTeam();
+          renderAdminTeamList();
         }
       } catch (e) {
         status.textContent = "Network error — try again.";
@@ -479,18 +852,39 @@
 
   // ---------- data loading + realtime ----------
   async function loadAll() {
-    var [u, l, t] = await Promise.all([
+    var results = await Promise.all([
       sb.from("updates").select("*").order("created_at", { ascending: false }).limit(200),
       sb.from("links").select("*").order("created_at", { ascending: false }).limit(500),
-      sb.from("tools").select("*")
+      sb.from("tools").select("*"),
+      sb.from("catalog_topics").select("*").order("created_at", { ascending: true }),
+      sb.from("calendar_events").select("*").order("event_date", { ascending: true }),
+      sb.from("month_focus").select("*"),
+      sb.from("team_roles").select("*").order("sort_order", { ascending: true })
     ]);
+    var u = results[0], l = results[1], t = results[2], ct = results[3], ce = results[4], mf = results[5], tr = results[6];
+
     state.updates = u.data || [];
     state.links = l.data || [];
     state.tools = {};
     (t.data || []).forEach(function (row) { state.tools[row.id] = row; });
+    state.catalogTopics = ct.data || [];
+    state.calendarEvents = ce.data || [];
+    state.monthFocus = {};
+    (mf.data || []).forEach(function (row) { state.monthFocus[row.month] = row; });
+    state.teamRoles = tr.data || [];
+
+    renderAllPages();
+  }
+
+  function renderAllPages() {
+    renderOverview();
     renderUpdates();
     renderLinks();
     renderTools();
+    renderCatalog();
+    renderCalendarPage();
+    renderOrgChart();
+    renderRoleOverviewGrid();
   }
 
   function subscribeRealtime() {
@@ -499,12 +893,17 @@
       .on("postgres_changes", { event: "*", schema: "public", table: "updates" }, loadAndRenderUpdates)
       .on("postgres_changes", { event: "*", schema: "public", table: "links" }, loadAndRenderLinks)
       .on("postgres_changes", { event: "*", schema: "public", table: "tools" }, loadAndRenderTools)
+      .on("postgres_changes", { event: "*", schema: "public", table: "catalog_topics" }, loadAndRenderCatalog)
+      .on("postgres_changes", { event: "*", schema: "public", table: "calendar_events" }, loadAndRenderCalendar)
+      .on("postgres_changes", { event: "*", schema: "public", table: "month_focus" }, loadAndRenderCalendar)
+      .on("postgres_changes", { event: "*", schema: "public", table: "team_roles" }, loadAndRenderTeamRoles)
       .subscribe();
   }
   async function loadAndRenderUpdates() {
     var res = await sb.from("updates").select("*").order("created_at", { ascending: false }).limit(200);
     state.updates = res.data || [];
     renderUpdates();
+    renderOverview();
   }
   async function loadAndRenderLinks() {
     var res = await sb.from("links").select("*").order("created_at", { ascending: false }).limit(500);
@@ -517,11 +916,35 @@
     (res.data || []).forEach(function (row) { state.tools[row.id] = row; });
     renderTools();
   }
+  async function loadAndRenderCatalog() {
+    var res = await sb.from("catalog_topics").select("*").order("created_at", { ascending: true });
+    state.catalogTopics = res.data || [];
+    renderCatalog();
+    renderOverview();
+  }
+  async function loadAndRenderCalendar() {
+    var results = await Promise.all([
+      sb.from("calendar_events").select("*").order("event_date", { ascending: true }),
+      sb.from("month_focus").select("*")
+    ]);
+    state.calendarEvents = results[0].data || [];
+    state.monthFocus = {};
+    (results[1].data || []).forEach(function (row) { state.monthFocus[row.month] = row; });
+    renderCalendarPage();
+    renderOverview();
+  }
+  async function loadAndRenderTeamRoles() {
+    var res = await sb.from("team_roles").select("*").order("sort_order", { ascending: true });
+    state.teamRoles = res.data || [];
+    renderOrgChart();
+    renderRoleOverviewGrid();
+    renderOverview();
+  }
 
   // ---------- boot ----------
-  // Signing in only changes what you can DO (post, add links, check off the
-  // list, see Team Access) — the dashboard itself is loaded for everyone,
-  // signed in or not, in boot() below.
+  // Signing in only changes what you can DO (post, add links, edit the
+  // catalog/calendar/team, see Admin) — the dashboard itself is loaded for
+  // everyone, signed in or not, in boot() below.
   async function onSignedIn(session) {
     state.session = session;
     await loadMyProfile();
@@ -532,7 +955,7 @@
       $("setpw-screen").hidden = false;
     }
     if (isOwner()) wireInviteForm();
-    renderTeam();
+    renderAdminTeamList();
     updateAuthChrome();
   }
 
@@ -543,15 +966,19 @@
     wireSetPasswordForm();
     wireComposer();
     wireLinkForm();
+    wireTopicModal();
+    wireRoleModal();
+    wireCalendarNav();
+    wireAddEventForm();
 
     // Load and show the dashboard for every visitor, guest or not.
     await loadAllProfiles();
     await loadAll();
     subscribeRealtime();
 
-    var { data } = await sb.auth.getSession();
-    if (data && data.session) {
-      await onSignedIn(data.session);
+    var sessionRes = await sb.auth.getSession();
+    if (sessionRes.data && sessionRes.data.session) {
+      await onSignedIn(sessionRes.data.session);
     } else {
       updateAuthChrome();
     }
