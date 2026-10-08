@@ -59,6 +59,76 @@
   </div>
 </div>
 
+<!-- ============ EDIT: CATALOG TOPIC (admin) ============ -->
+<div class="auth-overlay" id="topic-modal" hidden>
+  <div class="auth-card" style="max-width:480px;">
+    <button type="button" class="auth-close" id="topic-modal-close" aria-label="Close">&times;</button>
+    <h1 id="topic-modal-title" style="font-size:18px;">Add a catalog topic</h1>
+    <form id="topic-form">
+      <input type="hidden" id="topic-id">
+      <div class="field">
+        <label for="topic-title">Topic title</label>
+        <input id="topic-title" type="text" required maxlength="140" placeholder="e.g. Identity in Christ">
+      </div>
+      <div class="field">
+        <label for="topic-biblical">Biblical direction</label>
+        <textarea id="topic-biblical" rows="2" placeholder="e.g. 2 Corinthians 5:17 — who you are now that you're in Christ."></textarea>
+      </div>
+      <div class="field">
+        <label for="topic-activation">Activation ideas</label>
+        <textarea id="topic-activation" rows="3" placeholder="e.g. Testimony night; journal exercise; small group questions."></textarea>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-primary" type="submit" id="topic-save" style="flex:1;">Save</button>
+        <button class="btn btn-danger" type="button" id="topic-delete" hidden>Delete</button>
+      </div>
+    </form>
+    <p class="auth-error" id="topic-error" hidden></p>
+  </div>
+</div>
+
+<!-- ============ EDIT: TEAM ROLE (admin) ============ -->
+<div class="auth-overlay" id="role-modal" hidden>
+  <div class="auth-card" style="max-width:520px;">
+    <button type="button" class="auth-close" id="role-modal-close" aria-label="Close">&times;</button>
+    <h1 id="role-modal-title" style="font-size:18px;">Add a role</h1>
+    <form id="role-form">
+      <input type="hidden" id="role-id">
+      <div class="field">
+        <label for="role-title">Role title</label>
+        <input id="role-title" type="text" required maxlength="80" placeholder="e.g. Content Lead">
+      </div>
+      <div class="field">
+        <label for="role-subtitle">Subtitle (optional)</label>
+        <input id="role-subtitle" type="text" maxlength="80" placeholder="e.g. Campus Lead">
+      </div>
+      <div class="field">
+        <label for="role-focus">Short focus line (shown on the org chart card)</label>
+        <input id="role-focus" type="text" maxlength="140" placeholder="e.g. Owns the weekly message">
+      </div>
+      <div class="field">
+        <label for="role-parent">Reports to</label>
+        <select id="role-parent">
+          <option value="">Top of chart (no one)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="role-responsibilities">Responsibilities (one per line)</label>
+        <textarea id="role-responsibilities" rows="4" placeholder="One responsibility per line"></textarea>
+      </div>
+      <div class="field">
+        <label for="role-campus-example">What this could look like at your campus</label>
+        <textarea id="role-campus-example" rows="2"></textarea>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-primary" type="submit" id="role-save" style="flex:1;">Save</button>
+        <button class="btn btn-danger" type="button" id="role-delete" hidden>Delete</button>
+      </div>
+    </form>
+    <p class="auth-error" id="role-error" hidden></p>
+  </div>
+</div>
+
 <!-- ============ APP ============ -->
 <div class="app" id="app-shell">
   <header class="topnav">
@@ -69,11 +139,11 @@
       </a>
       <nav class="navgroup" id="nav">
         <a class="navlink" data-page="overview" href="#overview">Overview</a>
-        <a class="navlink" data-page="updates" href="#updates">Updates<span class="count" id="nav-updates-count">0</span></a>
-        <a class="navlink" data-page="links" href="#links">Files &amp; Links<span class="count" id="nav-links-count">0</span></a>
-        <a class="navlink" data-page="tools" href="#tools">Resource Status<span class="count" id="nav-tools-count">0%</span></a>
-        <a class="navlink" data-page="plan" href="#plan">Vision &amp; Playbook</a>
-        <a class="navlink" data-page="team" href="#team" id="team-navlink" hidden>Team Access</a>
+        <a class="navlink" data-page="catalog" href="#catalog">Content Catalog</a>
+        <a class="navlink" data-page="experience" href="#experience">Experience</a>
+        <a class="navlink" data-page="calendar" href="#calendar">Calendar &amp; Initiatives</a>
+        <a class="navlink" data-page="team" href="#team">Team</a>
+        <a class="navlink" data-page="admin" href="#admin" id="admin-navlink" hidden>Admin</a>
       </nav>
       <div class="topnav-right">
         <span class="whoami-chip" id="whoami-chip" hidden>Signed in as <span class="who" id="whoami">&mdash;</span> <span class="role-badge" id="role-badge">viewer</span></span>
@@ -90,148 +160,143 @@
       <div class="hero hero-photo" style="background-image:linear-gradient(0deg, rgba(5,20,30,0.78) 0%, rgba(5,20,30,0.35) 55%, rgba(5,20,30,0.1) 100%), url('assets/hero.jpg');">
         <div class="hero-photo-inner">
           <h1>Welcome, Directors.</h1>
-          <p>Everything you need to run HSL this semester &mdash; updates from Central, files and links, and what's ready to use right now.</p>
+          <p>Everything you need to run HSL this semester &mdash; this month's focus, the vision, and what Central is posting.</p>
           <div class="actions">
-            <a class="btn btn-primary" href="#updates">Post an update</a>
-            <a class="btn btn-ghost" href="#plan">Vision &amp; Playbook</a>
+            <a class="btn btn-primary" href="#calendar">See this month</a>
+            <a class="btn btn-ghost" href="#catalog">Content Catalog</a>
           </div>
         </div>
       </div>
 
-      <div class="quickstats">
-        <div class="qs"><span class="qs-v" id="stat-tools">0 / 0</span><span class="qs-k">Resources ready</span></div>
-        <div class="qs"><span class="qs-v" id="stat-updates">0</span><span class="qs-k">Updates logged</span></div>
-        <div class="qs"><span class="qs-v" id="stat-links">0</span><span class="qs-k">Files &amp; links</span></div>
-      </div>
-
-      <div class="two-col">
-        <div class="panel">
-          <div class="panel-head">
-            <div class="panel-title">Recent updates</div>
-            <a class="panel-link" href="#updates">View all</a>
-          </div>
-          <div class="feed" id="overview-updates">
-            <div class="empty">Loading&hellip;</div>
-          </div>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:20px;">
-          <div class="panel">
-            <div class="panel-head"><div class="panel-title">The Rhythm</div></div>
-            <div class="rhythm">
-              <div class="chip hsl"><div class="l">Spring</div><div class="v">HSL</div></div>
-              <div class="chip summer"><div class="l">Summer</div><div class="v">252</div></div>
-              <div class="chip hsl"><div class="l">Fall</div><div class="v">HSL</div></div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-head"><div class="panel-title">The Journey</div></div>
-            <div class="journey-mini">
-              <div class="jmini plant"><span class="tag">Plant</span><p>Take ownership of the house.</p></div>
-              <div class="jmini grow"><span class="tag">Grow</span><p>Take ownership of your faith.</p></div>
-              <div class="jmini reach"><span class="tag">Reach</span><p>Take ownership in God's mission.</p></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- UPDATES -->
-    <section class="page" id="page-updates" hidden>
-      <div class="page-banner" style="background-image:linear-gradient(0deg, rgba(5,20,30,0.6) 0%, rgba(5,20,30,0.15) 100%), url('assets/banner-updates.jpg');">
-        <div class="page-banner-inner">
-          <h1>Updates</h1>
-          <p>What Central and other directors are posting &mdash; see it here first.</p>
-        </div>
-      </div>
-
-      <div class="composer">
-        <textarea id="update-text" placeholder="What's new at your campus? e.g. &quot;Growth Track turnout was great this week &mdash; 12 students signed up.&quot;" maxlength="2000"></textarea>
-        <div class="composer-foot">
-          <span class="composer-hint" id="update-hint">Posting as &mdash;</span>
-          <button class="btn btn-primary" id="post-update" disabled>Post update</button>
-        </div>
-      </div>
-
-      <div class="feed" id="updates-feed">
-        <div class="empty">Loading updates&hellip;</div>
-      </div>
-    </section>
-
-    <!-- LINKS -->
-    <section class="page" id="page-links" hidden>
-      <div class="topbar">
-        <div>
-          <h1 class="page-title">Files &amp; Links</h1>
-          <p class="page-sub">The content catalog, budget sheet, branding files, and everything else you need, in one place.</p>
-        </div>
-      </div>
-
-      <form class="add-link-form" id="add-link-form">
-        <div class="field">
-          <label for="link-title">Title</label>
-          <input id="link-title" type="text" placeholder="e.g. Budget Guidance" maxlength="120" required>
-        </div>
-        <div class="field">
-          <label for="link-url">Link</label>
-          <input id="link-url" type="url" placeholder="https://&hellip;" required>
-        </div>
-        <div class="field">
-          <label for="link-category">Category</label>
-          <select id="link-category">
-            <option>Content Catalog</option>
-            <option>Branding &amp; Graphics</option>
-            <option>Budget</option>
-            <option>Planner &amp; Calendar</option>
-            <option>Director Resources</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <button class="btn btn-primary" type="submit" disabled id="add-link-btn">Add link</button>
-      </form>
-
-      <div class="link-groups" id="link-groups">
-        <div class="empty">Loading links&hellip;</div>
-      </div>
-    </section>
-
-    <!-- RESOURCE STATUS -->
-    <section class="page" id="page-tools" hidden>
-      <div class="topbar">
-        <div>
-          <h1 class="page-title">Resource Status</h1>
-          <p class="page-sub">What's ready for you to use right now, and what Central is still finishing up.</p>
-        </div>
+      <div class="stat-row">
+        <div class="stat"><span class="v" id="stat-initiatives">0</span><div class="k">Initiatives this month</div></div>
+        <div class="stat"><span class="v" id="stat-catalog">0</span><div class="k">Catalog topics</div></div>
+        <div class="stat"><span class="v" id="stat-roles">0</span><div class="k">Team roles defined</div></div>
+        <div class="stat"><span class="v" id="stat-updates-week">0</span><div class="k">Updates this week</div></div>
       </div>
 
       <div class="panel">
         <div class="panel-head">
-          <div class="panel-title">Overall progress</div>
-          <span id="tools-progress-label" style="font-size:13px; font-weight:700; font-variant-numeric:tabular-nums;">0%</span>
+          <div class="panel-title" id="overview-month-label">This month's initiatives</div>
         </div>
-        <div class="progress-bar"><span id="tools-progress-bar" style="width:0%"></span></div>
+        <div class="init-list" id="overview-init-list">
+          <div class="empty">Loading&hellip;</div>
+        </div>
+        <div class="mini-focus" id="overview-month-focus" style="margin-top:14px;"></div>
       </div>
 
-      <div class="tool-groups" id="tool-groups">
-        <div class="empty">Loading checklist&hellip;</div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">HSL Vision</div></div>
+        <p style="font-size:13.5px; line-height:1.7; max-width:72ch;">High School Leadership exists to provide intentional discipleship that equips students to be <strong>PLANTED</strong> in the local church, <strong>GROW</strong> in their relationship with Jesus, and <strong>REACH</strong> the lost.</p>
+        <div class="journey" style="margin-top:14px;">
+          <div class="jcard plant"><div class="name">01 Plant</div><p style="font-size:12.5px; color:var(--muted); margin:0;">Take ownership of the house.</p></div>
+          <div class="jcard grow"><div class="name">02 Grow</div><p style="font-size:12.5px; color:var(--muted); margin:0;">Take ownership of your faith.</p></div>
+          <div class="jcard reach"><div class="name">03 Reach</div><p style="font-size:12.5px; color:var(--muted); margin:0;">Take ownership in God's mission.</p></div>
+        </div>
+        <div class="rhythm" style="margin-top:16px;">
+          <div class="chip hsl"><div class="l">Spring</div><div class="v">HSL</div></div>
+          <div class="chip summer"><div class="l">Summer</div><div class="v">252</div></div>
+          <div class="chip hsl"><div class="l">Fall</div><div class="v">HSL</div></div>
+        </div>
+      </div>
+
+      <div class="panel ref-section">
+        <h3>Outcomes to Track</h3>
+        <p>Engagement: total HSL students (weekly, via check-in through Rock or Monday), and % with 75%+ attendance.</p>
+        <div class="outcomes">
+          <table>
+            <thead><tr><th>Stage</th><th>Metrics</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Plant</strong></td><td>% Growth Track complete &middot; % serving on Dream Team &middot; % connected to Small Groups</td></tr>
+              <tr><td><strong>Grow</strong></td><td>% leading Small Groups &middot; % given leadership opportunities &middot; % in spiritual disciplines <em>(tracking TBD)</em></td></tr>
+              <tr><td><strong>Reach</strong></td><td>% in school outreach &middot; % who shared their faith &middot; # first-time guests brought</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Updates</div></div>
+        <div class="composer">
+          <textarea id="update-text" placeholder="What's new at your campus? e.g. &quot;Growth Track turnout was great this week &mdash; 12 students signed up.&quot;" maxlength="2000"></textarea>
+          <div class="composer-foot">
+            <span class="composer-hint" id="update-hint">Posting as &mdash;</span>
+            <button class="btn btn-primary" id="post-update" disabled>Post update</button>
+          </div>
+        </div>
+        <div class="feed" id="updates-feed" style="margin-top:14px;">
+          <div class="empty">Loading updates&hellip;</div>
+        </div>
       </div>
     </section>
 
-    <!-- VISION & PLAYBOOK -->
-    <section class="page" id="page-plan" hidden>
-      <div class="page-banner" style="background-image:linear-gradient(0deg, rgba(5,20,30,0.6) 0%, rgba(5,20,30,0.15) 100%), url('assets/banner-vision.jpg');">
-        <div class="page-banner-inner">
-          <h1>Vision &amp; Playbook</h1>
-          <p>The vision, the model, and what's yours to own at the campus level.</p>
+    <!-- CONTENT CATALOG -->
+    <section class="page" id="page-catalog" hidden>
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Content Catalog</h1>
+          <p class="page-sub">Approved topics, biblical direction, and activation ideas &mdash; plus the files, links, and resource checklist directors need.</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="add-topic-btn" hidden>+ Add topic</button>
+        </div>
+      </div>
+
+      <div class="catalog-grid" id="catalog-grid">
+        <div class="empty">Loading catalog&hellip;</div>
+      </div>
+
+      <div class="panel" style="margin-top:28px;">
+        <div class="panel-head"><div class="panel-title">Files &amp; Links</div></div>
+        <form class="add-link-form" id="add-link-form">
+          <div class="field">
+            <label for="link-title">Title</label>
+            <input id="link-title" type="text" placeholder="e.g. Budget Guidance" maxlength="120" required>
+          </div>
+          <div class="field">
+            <label for="link-url">Link</label>
+            <input id="link-url" type="url" placeholder="https://&hellip;" required>
+          </div>
+          <div class="field">
+            <label for="link-category">Category</label>
+            <select id="link-category">
+              <option>Content Catalog</option>
+              <option>Branding &amp; Graphics</option>
+              <option>Budget</option>
+              <option>Planner &amp; Calendar</option>
+              <option>Director Resources</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" type="submit" disabled id="add-link-btn">Add link</button>
+        </form>
+        <div class="link-groups" id="link-groups" style="margin-top:18px;">
+          <div class="empty">Loading links&hellip;</div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <div class="panel-head">
+          <div class="panel-title">Resource Status</div>
+          <span id="tools-progress-label" style="font-size:13px; font-weight:700; font-variant-numeric:tabular-nums;">0%</span>
+        </div>
+        <div class="progress-bar"><span id="tools-progress-bar" style="width:0%"></span></div>
+        <div class="tool-groups" id="tool-groups" style="margin-top:18px;">
+          <div class="empty">Loading checklist&hellip;</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXPERIENCE -->
+    <section class="page" id="page-experience" hidden>
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Experience</h1>
+          <p class="page-sub">The model, the playbook, and the experience formats &mdash; what Central owns vs. what's yours to shape.</p>
         </div>
       </div>
 
       <div class="page" style="gap:24px; padding-bottom:0;">
-        <div class="panel ref-section">
-          <h3>HSL Vision</h3>
-          <p>High School Leadership exists to provide intentional discipleship that equips students to be <strong>PLANTED</strong> in the local church, <strong>GROW</strong> in their relationship with Jesus, and <strong>REACH</strong> the lost.</p>
-        </div>
-
         <div class="panel ref-section">
           <h3>The Model</h3>
           <div class="model-grid">
@@ -249,48 +314,6 @@
                 <li>Time + Location</li><li>Experience</li><li>Contextualization</li>
                 <li>Activation</li><li>Relational Approach</li>
               </ul>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel ref-section">
-          <h3>The HSL Journey</h3>
-          <div class="journey">
-            <div class="jcard plant">
-              <div class="name">01 Plant</div>
-              <p style="font-size:12.5px; color:var(--muted); margin:0;">Take ownership of the house.</p>
-              <ul>
-                <li>Worship One + Serve One</li>
-                <li>Serve through the Dream Team</li>
-                <li>Connected through Small Groups</li>
-                <li>Coaching from leadership</li>
-                <li>Given opportunities to lead</li>
-              </ul>
-              <div class="want">Planted, dependable, connected, taking ownership.</div>
-            </div>
-            <div class="jcard grow">
-              <div class="name">02 Grow</div>
-              <p style="font-size:12.5px; color:var(--muted); margin:0;">Take ownership of your faith.</p>
-              <ul>
-                <li>Know what &amp; why they believe</li>
-                <li>Biblical foundations</li>
-                <li>Consistent spiritual disciplines</li>
-                <li>Character and integrity</li>
-                <li>Hear from God, respond in obedience</li>
-              </ul>
-              <div class="want">Faith that isn't dependent on a service, leader, or environment.</div>
-            </div>
-            <div class="jcard reach">
-              <div class="name">03 Reach</div>
-              <p style="font-size:12.5px; color:var(--muted); margin:0;">Take ownership in God's mission.</p>
-              <ul>
-                <li>Genuine relationships with the lost</li>
-                <li>Confidently share their faith</li>
-                <li>Pray intentionally for lost friends</li>
-                <li>Identify their mission field</li>
-                <li>Invite people into HSL &amp; services</li>
-              </ul>
-              <div class="want">Students who help other people know Jesus.</div>
             </div>
           </div>
         </div>
@@ -338,12 +361,6 @@
         </div>
 
         <div class="panel ref-section">
-          <h3>Content</h3>
-          <p>Central creates an approved HSL Content Catalog &mdash; not fully built-out messages: topics, biblical direction, and activation ideas, so directors can contextualize while staying aligned with the HSL vision.</p>
-          <p><strong>Expectation: freedom comes with preparation.</strong> Content should be planned intentionally, not improvised week to week.</p>
-        </div>
-
-        <div class="panel ref-section">
           <h3>Experience Models</h3>
           <div class="exp-grid">
             <div class="exp-card"><h4>Home</h4><p>A relational environment hosted in a home.</p></div>
@@ -354,11 +371,91 @@
       </div>
     </section>
 
-    <!-- TEAM ACCESS (owner only) -->
+    <!-- CALENDAR & INITIATIVES -->
+    <section class="page" id="page-calendar" hidden>
+      <div class="month-focus">
+        <div>
+          <div class="tag" id="cal-month-label">Month</div>
+          <h2 id="cal-focus-text">&mdash;</h2>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn btn-ghost btn-sm" id="cal-prev" type="button">&larr;</button>
+          <button class="btn btn-ghost btn-sm" id="cal-today" type="button">Today</button>
+          <button class="btn btn-ghost btn-sm" id="cal-next" type="button">&rarr;</button>
+        </div>
+      </div>
+
+      <div class="panel" id="cal-focus-edit-wrap" hidden>
+        <div class="panel-head"><div class="panel-title">Edit this month's overall focus</div></div>
+        <div style="display:flex; gap:10px;">
+          <input id="cal-focus-input" type="text" maxlength="160" placeholder="e.g. Fall Kickoff &amp; Growth Track Push" style="flex:1; border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:13.5px; font-family:inherit;">
+          <button class="btn btn-primary btn-sm" id="cal-focus-save" type="button">Save</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="big-cal" id="big-cal">
+          <div class="empty">Loading calendar&hellip;</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Add an event</div></div>
+        <form class="add-link-form" id="add-event-form" hidden>
+          <div class="field">
+            <label for="event-date">Date</label>
+            <input id="event-date" type="date" required>
+          </div>
+          <div class="field">
+            <label for="event-title">Title</label>
+            <input id="event-title" type="text" maxlength="120" required placeholder="e.g. Fall Kickoff Night">
+          </div>
+          <div class="field">
+            <label for="event-subtitle">Note (optional)</label>
+            <input id="event-subtitle" type="text" maxlength="120" placeholder="e.g. Main campus, 6:30pm">
+          </div>
+          <button class="btn btn-primary" type="submit" id="add-event-btn">Add event</button>
+        </form>
+        <p id="event-form-hint" class="composer-hint">Sign in as an editor or owner to add events.</p>
+
+        <div class="init-list" id="event-list" style="margin-top:16px;">
+          <div class="empty">No events yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEAM -->
     <section class="page" id="page-team" hidden>
       <div class="topbar">
         <div>
-          <h1 class="page-title">Team Access</h1>
+          <h1 class="page-title">Team</h1>
+          <p class="page-sub">A resource for visualizing the lead team your campus needs &mdash; and what each role could look like.</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="add-role-btn" hidden>+ Add role</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Org Chart</div></div>
+        <div class="org-chart" id="org-chart">
+          <div class="empty">Loading&hellip;</div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <div class="panel-head"><div class="panel-title">Role Overviews</div></div>
+        <div class="role-grid" id="role-overview-grid">
+          <div class="empty">Loading&hellip;</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN (owner only) -->
+    <section class="page" id="page-admin" hidden>
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Admin</h1>
           <p class="page-sub">Invite directors and control who can edit this hub. Only owners can see this page.</p>
         </div>
       </div>
